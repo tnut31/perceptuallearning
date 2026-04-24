@@ -1,8 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function FeedbackPage() {
+function FeedbackContent() {
   const params = useSearchParams();
   const answer = params.get("answer") || "No answer submitted";
 
@@ -50,5 +51,13 @@ export default function FeedbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function FeedbackPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0b1220] text-white p-6">Loading feedback...</div>}>
+      <FeedbackContent />
+    </Suspense>
   );
 }
