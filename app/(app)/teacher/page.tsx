@@ -1,8 +1,28 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+
+const actionCards = [
+  {
+    title: "Results",
+    description:
+      "Review student submissions, scores, and question-level performance.",
+    href: "/teacher/results",
+  },
+  {
+    title: "Mastery Tracker",
+    description: "Track class and student mastery by standard and cluster.",
+    href: "/teacher/mastery",
+  },
+  {
+    title: "Growth Tracking",
+    description: "Compare pre-test and post-test growth over time.",
+    href: "/teacher/growth",
+  },
+];
 
 export default function DashboardPage() {
   const supabase = createClient();
@@ -38,34 +58,25 @@ export default function DashboardPage() {
             Dashboard
           </h1>
 
-          <button
-            onClick={logout}
-            className="rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
-          >
-            Log Out
-          </button>
+          
         </div>
 
-      
-
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <p className="text-sm text-slate-500">Class Mastery</p>
-            <p className="mt-2 text-3xl font-semibold text-blue-600">72%</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <p className="text-sm text-slate-500">Top Misconception</p>
-            <p className="mt-2 text-lg font-semibold">
-              Reversed Ratio
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 p-6 shadow-sm">
-            <p className="text-sm text-slate-500">Students Needing Support</p>
-            <p className="mt-2 text-3xl font-semibold text-blue-600">6</p>
-          </div>
-        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {actionCards.map((card) => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+            >
+              <h2 className="text-lg font-semibold text-slate-900">
+                {card.title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {card.description}
+              </p>
+            </Link>
+          ))}
+      </div>
 
       </div>
     </div>

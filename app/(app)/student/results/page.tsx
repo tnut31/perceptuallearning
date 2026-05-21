@@ -1,73 +1,120 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabaseClient";
 import Link from "next/link";
 
 type Result = {
-  assessment: string;
-  week: string;
-  type: "Pre" | "Post";
+  assigned_assessment_id: string;
+  title: string;
+  week_number: number | null;
+  type: string | null;
+  status: string;
   score: string;
-  status: "Completed" | "Not Started";
 };
 
-const results: Result[] = [
-  {
-    assessment: "Week 1 Pre-Test",
-    week: "Week 1",
-    type: "Pre",
-    score: "45%",
-    status: "Completed",
-  },
-  {
-    assessment: "Week 1 Post-Test",
-    week: "Week 1",
-    type: "Post",
-    score: "72%",
-    status: "Completed",
-  },
-  {
-    assessment: "Week 2 Pre-Test",
-    week: "Week 2",
-    type: "Pre",
-    score: "51%",
-    status: "Completed",
-  },
-  {
-    assessment: "Week 2 Post-Test",
-    week: "Week 2",
-    type: "Post",
-    score: "-",
-    status: "Not Started",
-  },
-];
-
 export default function StudentResultsPage() {
+  const [results, setResults] = useState<Result[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadResults() {
+      const supabase = createClient();
+
+      const { data: userData } = await supabase.auth.getUser();
+      const studentId = userData.user?.user_metadata?.student_id as
+        | string
+        | undefined;
+
+      if (!studentId) {
+        setResults([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: responses, error } = await supabase
+        .from("responses")
+        .select(`
+          assigned_assessment_id,
+          score,
+          assigned_assessments (
+            id,
+            assessments (
+              title,
+              week_number,
+              type
+            )
+          )
+        `)
+        .eq("student_id", studentId);
+
+      if (error) {
+        console.error("Error loading results:", error);
+        setResults([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const grouped = new Map<string, any[]>();
+
+      (responses || []).forEach((response: any) => {
+        const key = response.assigned_assessment_id;
+
+        if (!grouped.has(key)) {
+          grouped.set(key, []);
+        }
+
+        grouped.get(key)?.push(response);
+      });
+
+      const formattedResults: Result[] = Array.from(grouped.entries()).map(
+        ([assignedAssessmentId, rows]) => {
+          const first = rows[0];
+          const assessment =
+            first.assigned_assessments?.assessments;
+
+          const gradedRows = rows.filter((row) => row.score !== null);
+
+          const earnedPoints = gradedRows.reduce(
+  (sum, row) => sum + Number(row.score),
+  0
+);
+
+
+const totalPoints = rows.length;
+
+const score =
+  gradedRows.length > 0
+    ? `${earnedPoints}/${totalPoints} (${Math.round(
+        (earnedPoints / totalPoints) * 100
+      )}%)`
+    : "Submitted";
+
+          return {
+            assigned_assessment_id: assignedAssessmentId,
+            title: assessment?.title || "Untitled Assessment",
+            week_number: assessment?.week_number ?? null,
+            type: assessment?.type || null,
+            status: "Completed",
+            score,
+          };
+        }
+      );
+
+      setResults(formattedResults);
+      setIsLoading(false);
+    }
+
+    loadResults();
+  }, []);
+
   return (
     <div>
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-slate-900">
-            My Results
-          </h1>
-          <p className="mt-2 text-slate-600">
-            Review your assessment scores and see how you are growing.
-          </p>
-        </div>
+      <h1 className="text-3xl font-semibold text-slate-900">My Results</h1>
 
-        <Link
-          href="/student"
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-        >
-          Back to Dashboard
-        </Link>
-      </div>
-
-      <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold text-blue-700">Recent Growth</p>
-        <p className="mt-2 text-lg font-semibold text-slate-900">
-          Week 1: +27 percentage points from pre-test to post-test
-        </p>
-      </section>
+      <p className="mt-2 text-slate-600">
+        View your raw assessment scores.
+      </p>
 
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-slate-900">
@@ -81,35 +128,57 @@ export default function StudentResultsPage() {
                 <th className="px-4 py-3 font-semibold">Assessment</th>
                 <th className="px-4 py-3 font-semibold">Week</th>
                 <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold">Score</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Score</th>
+                <th className="px-4 py-3 font-semibold">Review</th>
               </tr>
             </thead>
 
             <tbody>
-              {results.map((result) => (
-                <tr key={result.assessment} className="border-t border-slate-200">
-                  <td className="px-4 py-3 font-medium text-slate-900">
-                    {result.assessment}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{result.week}</td>
-                  <td className="px-4 py-3 text-slate-600">{result.type}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">
-                    {result.score}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={
-                        result.status === "Completed"
-                          ? "rounded-lg bg-green-100 px-3 py-1 text-xs font-semibold text-green-700"
-                          : "rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
-                      }
-                    >
-                      {result.status}
-                    </span>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-slate-500">
+                    Loading results...
                   </td>
                 </tr>
-              ))}
+              ) : results.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-slate-500">
+                    No results yet.
+                  </td>
+                </tr>
+              ) : (
+                results.map((result) => (
+                  <tr
+                    key={result.assigned_assessment_id}
+                    className="border-t border-slate-200"
+                  >
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      {result.title}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {result.week_number || "-"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {result.type === "pre" ? "Pre" : "Post"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {result.status}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-900">
+                      {result.score}
+                    </td>
+                    <td className="px-4 py-3">
+                            <Link
+                                href={`/student/results/${result.assigned_assessment_id}`}
+                                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500"
+                            >
+                                Review
+                            </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -43,6 +43,13 @@ export default function StudentLayout({
 
     checkRole();
   }, [router]);
+  async function handleLogout() {
+  const supabase = createClient();
+
+  await supabase.auth.signOut();
+
+  router.push("/login");
+}
 
   if (isCheckingRole) {
     return <div className="p-8 text-slate-600">Loading...</div>;
@@ -56,9 +63,18 @@ export default function StudentLayout({
             PerceptualLearning
           </Link>
 
-          <div className="rounded-full bg-blue-700 px-3 py-1 text-sm">
-            👤 {displayName}
-          </div>
+          <div className="flex items-center gap-3">
+                      <div className="rounded-full bg-blue-700 px-3 py-1 text-sm">
+                          👤 {displayName}
+                      </div>
+
+                      <button
+                          onClick={handleLogout}
+                          className="rounded-full bg-red-500 px-3 py-1 text-sm font-semibold text-white hover:bg-red-400"
+                      >
+                          Logout
+                      </button>
+                  </div>
         </div>
 
         <nav className="border-t border-blue-700 bg-blue-700 px-8">

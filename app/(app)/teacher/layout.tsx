@@ -43,6 +43,13 @@ export default function TeacherLayout({
 
     checkRole();
   }, [router]);
+  async function handleLogout() {
+  const supabase = createClient();
+
+  await supabase.auth.signOut();
+
+  router.push("/login");
+}
 
   if (isCheckingRole) {
     return <div className="p-8 text-slate-600">Loading...</div>;
@@ -56,9 +63,18 @@ export default function TeacherLayout({
             PerceptualLearning
           </Link>
 
-          <div className="rounded-full bg-blue-700 px-3 py-1 text-sm">
-            👤 {displayName}
-          </div>
+          <div className="flex items-center gap-3">
+                      <div className="rounded-full bg-blue-700 px-3 py-1 text-sm">
+                          👤 {displayName}
+                      </div>
+
+                      <button
+                          onClick={handleLogout}
+                          className="rounded-full bg-red-500 px-3 py-1 text-sm font-semibold text-white hover:bg-red-400"
+                      >
+                          Logout
+                      </button>
+                  </div>
         </div>
 
         <nav className="border-t border-blue-700 bg-blue-700 px-8">
@@ -67,10 +83,22 @@ export default function TeacherLayout({
               Dashboard
             </Link>
             <Link href="/teacher/assessments" className="px-2 py-4 font-semibold">
-              Assessments
+              Assignments
+            </Link>
+            <Link href="/teacher/results" className="px-2 py-4 font-semibold">
+              Results
+            </Link>
+            <Link href="/teacher/questions" className="px-2 py-4 font-semibold">
+              Question Bank
             </Link>
             <Link href="/teacher/mastery" className="px-2 py-4 font-semibold">
               Mastery Tracker
+            </Link>
+            <Link href="/teacher/growth" className="px-2 py-4 font-semibold">
+              Growth
+            </Link>
+            <Link href="/teacher/targeted-instruction" className="px-2 py-4 font-semibold">
+              Targeted Instruction
             </Link>
             <Link href="/teacher/classes" className="px-2 py-4 font-semibold">
               Classes
